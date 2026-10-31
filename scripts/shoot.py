@@ -2,7 +2,7 @@
 
 用法：
     python shoot.py index.html --round 1
-    python shoot.py http://localhost:5173 --round 2 --out shots --frames 4
+    python shoot.py http://localhost:5173 --round 2 --out .design/shots --frames 4
 
 为什么不直接 full_page 一张：
 - 滚动触发的入场动画（IntersectionObserver）和懒加载图片在不滚动时不会出现，
@@ -57,7 +57,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="本地 HTML 路径或 URL")
     parser.add_argument("--round", type=int, required=True)
-    parser.add_argument("--out", default="shots")
+    parser.add_argument("--out", default=".design/shots")
     parser.add_argument("--frames", type=int, default=0, help="首屏动效抽帧数")
     parser.add_argument("--interval", type=int, default=400, help="抽帧间隔 ms")
     parser.add_argument("--reduced-motion", action="store_true")
