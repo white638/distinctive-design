@@ -1,14 +1,45 @@
 {
   "type": "object",
   "properties": {
+    "description": {
+      "type": "string",
+      "description": "第一步：画面上有什么，只用中性词"
+    },
+    "analysis": {
+      "type": "object",
+      "description": "第二步：元素之间的关系",
+      "properties": {
+        "first_glance": { "type": "string", "description": "首屏一眼的复杂度，能否认出是哪类网站或产品" },
+        "balance": { "type": "string", "description": "视线第一落点与视觉重量分布" },
+        "rhythm_and_spacing": { "type": "string", "description": "层级、节奏、疏密与留白方向" },
+        "unity_and_variety": { "type": "string", "description": "字号、颜色、圆角、间距的种类是否合适" },
+        "coincidences": {
+          "type": "array",
+          "description": "差几像素就对齐、相切、擦边的地方",
+          "items": { "type": "string" }
+        },
+        "details": { "type": "string", "description": "字距、对齐、边缘、图像质量、中文排版" }
+      },
+      "required": ["first_glance", "balance", "rhythm_and_spacing", "unity_and_variety", "coincidences", "details"],
+      "additionalProperties": false
+    },
+    "interpretation": {
+      "type": "string",
+      "description": "第三步：这个设计传达出的情绪和气质"
+    },
+    "unclear_elements": {
+      "type": "array",
+      "description": "第三步：看了两遍还不明白在做什么的元素",
+      "items": { "type": "string" }
+    },
     "aesthetic": {
       "type": "string",
-      "description": "评审判断出的这个设计想要达成的美学方向"
+      "description": "第四步：判断出的美学方向"
     },
     "gaps": {
       "type": "array",
       "maxItems": 6,
-      "description": "与顶级工作室水准之间最大的差距，按影响排序",
+      "description": "第四步：与顶级工作室水准之间最大的差距，按影响排序",
       "items": {
         "type": "object",
         "properties": {
@@ -22,16 +53,16 @@
     },
     "ai_tells": {
       "type": "array",
-      "description": "看起来用烂了、过度堆砌或一眼是 AI 生成的模式",
+      "description": "第四步：看起来用烂了、过度堆砌或一眼是 AI 生成的模式",
       "items": { "type": "string" }
     },
     "score": {
       "type": "number",
       "minimum": 0,
       "maximum": 10,
-      "description": "离那个工作室水准有多近"
+      "description": "第四步：离那个工作室水准有多近"
     }
   },
-  "required": ["aesthetic", "gaps", "ai_tells", "score"],
+  "required": ["description", "analysis", "interpretation", "unclear_elements", "aesthetic", "gaps", "ai_tells", "score"],
   "additionalProperties": false
 }

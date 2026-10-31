@@ -4,7 +4,7 @@
 
 流程分三段：
 - **Discover**：用外部随机种子在八条设计轴上抽签，避免落回平均值。
-- **Define**：独立评审子代理只看截图，循环打分；用生成图像和视频丰富视觉。
+- **Define**：独立评审子代理只看截图，按"描述 → 分析 → 解读 → 判断"四步评审并核对情绪是否传达；用生成图像和视频丰富视觉。
 - **Deliver**：大胆删减，按三层 AI 痕迹清单数命中，并手工重写文案。
 
 附带中文字体与中文排版的检查清单。
@@ -18,8 +18,9 @@
 | `scripts/shoot.py` | 给评审截图：先滚动触发懒加载与入场动画，再截首屏与分段长图（桌面 + 移动） |
 | `references/critic-prompt.md` | 评审 prompt 原文（打分式 / 排名式）、两个宿主的调用方式、评审记录格式 |
 | `references/ai-tells.md` | 三层 AI 痕迹清单（老套路 / 新套路 / 组合套路）与计数规则，注明日期 |
+| `references/aesthetics.md` | 审美原理：新颖预算（MAYA、第一印象研究）、可解的陌生感、知觉规律、构图检查 |
 | `references/media-generation.md` | 图像与视频生成的预检、命令和备选 |
-| `references/cjk-typography.md` | 中文字体授权与子集化、排版细节、浏览器支持、中文 AI 腔 |
+| `references/cjk-typography.md` | 东方画论构图原理、中文字体授权与子集化、排版细节、浏览器支持、中文 AI 腔 |
 | `assets/critic-schema.json` | Codex 备选评审（`codex exec --output-schema`）的输出格式 |
 | `codex/design_critic.toml` | Codex 的评审子代理定义 |
 | `agents/openai.yaml` | Codex 界面元数据，Claude Code 会忽略它 |
