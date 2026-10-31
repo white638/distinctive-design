@@ -1,30 +1,40 @@
 ---
 name: "distinctive-design"
-description: "Use when designing or redesigning a UI, landing page, app screen, poster or other visual web design that must look distinctive and polished rather than like generic AI output. 中文触发：做落地页、官网、海报、App 界面、改版、重新设计、视觉升级、别像 AI 做的、太模板化、没有设计感、做得高级一点。Runs a seed-driven discover → define → deliver loop with an independent screenshot critic, generated imagery, deliberate subtraction and Chinese typography checks. Works in both Claude Code and Codex."
+description: "Use when designing or redesigning a UI, landing page, app screen, poster or other visual web design that must look distinctive and polished rather than like generic AI output. 中文触发：做落地页、官网、海报、App 界面、改版、重新设计、视觉升级、别像 AI 做的、太模板化、没有设计感、做得高级一点。Runs a seed-driven discover → define → deliver loop with an independent screenshot critic, generated imagery, deliberate subtraction and Chinese typography checks. Works in both Claude Code and Codex. Not for data charts or dashboards, backend or logic-only frontend fixes, or work that must strictly follow an existing design system (then apply only the subtraction, AI-tell and copy steps)."
 ---
 
 # 独特设计（Discover → Define → Deliver）
 
-模型天生倾向于在每个设计决策上选"最可能让所有人满意"的那个选项，结果就是千篇一律：紫色渐变、左文右图、顶部导航、居中 CTA。好的设计从"感觉"出发，敢于打破常规、制造意料之外的愉悦。本 skill 把双钻设计流程改造成适合 AI 代理的三阶段流程，用外部随机性、独立评审、图像/视频生成和大胆删减，把设计从"平均值"推向"只有这一个"。
+模型天生倾向于在每个设计决策上选"最可能让所有人满意"的那个选项，结果就是千篇一律：紫色渐变、左文右图、顶部导航、居中 CTA。被要求"别像 AI"时，它又会滑向第二个平均值：奶油底、衬线标题、赤陶色。好的设计从"感觉"出发，敢于打破常规、制造意料之外的愉悦。本 skill 把双钻设计流程改造成适合 AI 代理的三阶段流程，用外部随机性、独立评审、图像/视频生成和大胆删减，把设计从"平均值"推向"只有这一个"。
 
 交付形式仍遵守当前会话的输出规则（例如有 Design 类 artifact 时用它；用户要文件就给文件）。本 skill 管的是**过程与质量**。
 
-配套文件（路径相对于本 skill 所在目录；在项目目录里调用脚本时写绝对路径）：
-- `scripts/seed_axes.py`：生成种子并在设计轴上抽签（技巧 1）
-- `scripts/shoot.py`：给评审截图，首屏 + 分段长图（技巧 3）
-- `references/critic-prompt.md`：评审 prompt 原文与评审记录格式（技巧 3）
-- `references/cjk-typography.md`：中文字体、排版与中文 AI 腔（技巧 7、8）
+## 配套文件
+
+下文的 `<skill 目录>` 指本 skill 所在目录：Claude Code 里写作 `${CLAUDE_SKILL_DIR}`；Codex 里用技能列表给出的该 skill 路径，写成绝对路径。在项目目录里调用脚本时都要带上它。
+
+| 文件 | 何时用 |
+|---|---|
+| `scripts/seed_axes.py` | 技巧 1：生成种子并在八条设计轴上抽签 |
+| `scripts/shoot.py` | 技巧 3、6：给评审截图，首屏 + 分段长图 |
+| `references/critic-prompt.md` | 技巧 3：评审 prompt 原文、两个宿主的调用方式、评审记录格式 |
+| `assets/critic-schema.json` | 技巧 3：Codex 备选评审的输出格式 |
+| `codex/design_critic.toml` | 技巧 3：Codex 的评审子代理定义，装进 `~/.codex/agents/` |
+| `references/media-generation.md` | 技巧 4、5：图像与视频生成的预检、命令和备选 |
+| `references/ai-tells.md` | 技巧 1 收尾、技巧 7：三层 AI 痕迹清单与计数规则 |
+| `references/cjk-typography.md` | 有中文时：字体、排版、浏览器支持与中文 AI 腔 |
 
 ## 宿主适配
 
-本 skill 在 Claude Code 和 Codex 里通用。流程相同，只有几处工具不同，开工时先确认自己在哪个宿主里：
+流程相同，只有几处工具不同，开工时先确认自己在哪个宿主里：
 
 | 步骤 | Claude Code | Codex |
 |---|---|---|
+| 脚本路径 | `${CLAUDE_SKILL_DIR}/scripts/...` | 技能列表给出的绝对路径 |
 | 看截图、看生成图 | Read 工具 | 图片查看工具（`view_image`），或把图片作为附件交给子代理 |
-| 独立评审（技巧 3） | Agent 工具开一个全新上下文的子代理 | 开一个**不继承父会话历史**的子代理；当前 Codex 没有子代理功能，或子代理只能 fork 父会话时，新开一个 `codex exec` 进程作为评审（见技巧 3） |
+| 独立评审（技巧 3） | Agent 工具开一个全新上下文的子代理 | `design_critic` 子代理；没有时用独立的 `codex exec` 进程 |
 | 图像生成（技巧 4） | 通过命令行调用 `codex exec` 的 `$imagegen` | 直接用内置图像生成工具，不要再嵌套一层 `codex exec` |
-| 截图 | `scripts/shoot.py`；也可用会话里的浏览器截图工具 | `scripts/shoot.py` |
+| 截图 | `shoot.py`；也可用会话里的浏览器截图工具 | `shoot.py` |
 | 运行 Python | Windows 用 `python` 或 `py -3`（`python3` 常是应用商店存根，会静默无输出）；macOS / Linux 用 `python3` | 同左 |
 
 两个宿主都不给评审看代码，评审的独立性来自"只看截图 + 全新上下文"，与评审用的是哪家模型无关。
@@ -35,10 +45,11 @@ description: "Use when designing or redesigning a UI, landing page, app screen, 
 
 ```
 .design/
-  direction.md     种子、抽签结果、创意方向说明（技巧 1、2）
-  review_log.md    每轮评审的分数、前三条意见、实际改动（技巧 3）
-  shots/           每轮截图
-  snapshots/       每轮修改前的源码快照
+  direction.md       种子、抽签结果、创意方向说明（技巧 1、2）
+  critic_prompt.md   本次固定使用的评审 prompt（技巧 3）
+  review_log.md      每轮评审的分数、前三条意见、实际改动（技巧 3）
+  shots/             每轮截图
+  snapshots/         每轮修改前的源码快照
 ```
 
 某一步做不了（没有子代理、没有图像生成、装不上 Playwright），就在对应文件里写"跳过：原因"，并在交付时告诉用户，**不要悄悄降级**。交付说明里的创意方向、评审分数和轮数，都要能在这些文件里找到出处。用户不想把它提交进仓库时，把 `.design/` 加进 `.gitignore`。
@@ -52,13 +63,13 @@ description: "Use when designing or redesigning a UI, landing page, app screen, 
 
    | 任务 | 走哪些步骤 |
    |---|---|
-   | 调一个组件、改一处样式 | 技巧 6、7 + 最终检查 |
+   | 调一个组件、改一处样式；必须遵守现有设计系统 | 技巧 6、7、8 + 最终检查 |
    | 已有设计的视觉升级 | 阶段 2、3，评审循环 2–3 轮 |
    | 从零做一个页面 / 海报 / 品牌视觉 | 全流程 |
 
 3. 用户已经给出明确、具体的创意方向 → 跳过阶段 1 的发散，直接用它进入阶段 2。
 4. 用户在场且方向空白 → 走完整的阶段 1，并让用户参与挑选。用户不在场 → 自己挑最大胆且仍能服务于产品的方向，并在开头写明选了什么、为什么。
-5. 确认宿主（见"宿主适配"），并提前预检要用到的工具，这样到阶段 2 时不会卡住：截图（`python -c "import playwright"`）、独立评审用的子代理、图像生成（见技巧 4 的"预检"）。缺什么，现在就记下来并告诉用户。
+5. 确认宿主，并提前预检要用到的工具，这样到阶段 2 时不会卡住：截图（`python -c "import playwright"`）、独立评审（Codex 里看 `~/.codex/agents/design_critic.toml` 是否存在）、图像生成（见 `references/media-generation.md` 的"预检"）。缺什么，现在就记下来并告诉用户。
 6. 建一个任务列表：发散 → 定方向 → 实现 → 评审循环 → 丰富视觉 → 删减 → 去 AI 痕迹 → 改文案 → 最终检查。
 
 ---
@@ -70,14 +81,14 @@ description: "Use when designing or redesigning a UI, landing page, app screen, 
 **不要**只写"做得独特一点 / 随机决定"——模型只会产出"听起来随机"但实际雷同的结果。随机性必须来自模型外部：
 
 ```bash
-python scripts/seed_axes.py          # 一个方向；-n 3 给三个备选（macOS / Linux 用 python3）
+python "<skill 目录>/scripts/seed_axes.py"          # 一个方向；-n 3 给三个备选
 ```
 
-脚本输出一个 64 位种子，并按种子确定性地在七条轴上抽签：灵感来源、版式原型、配色策略、字体气质、形状语言、动效性格、信息密度。然后：
+脚本输出一个 64 位种子，并按种子确定性地在八条轴上抽签：灵感来源、版式原型、配色策略、明暗、字体气质、形状语言、动效性格、信息密度。然后：
 - 先把抽签结果当作骨架：它负责把你推离"最可能"的选项。某一签明显伤害产品时可以重抽那一轴，但要写明原因，不能因为"不好做"就重抽。
 - 再回到种子本身找血肉：子模式、重复、特殊数字、字母的形状、大小写的节奏，任何能激发灵感的线索，用来决定具体色值、比例、节奏。
-- 把推导写成一份简短的"创意方向说明"（每个决策对应到哪条签或种子里的哪条线索），连同种子和抽签结果一起写进 `.design/direction.md`，再用自己的判断力把它做好看。
-- 写完对照技巧 7 的第二层表看一眼方向说明：如果配色、字体、版式加起来恰好就是表里的某个"新套路"，说明推导被默认值拉回去了，回到抽签结果重新推。这一步检查的是方向，不是给实现加禁令。
+- 把推导写成一份简短的"创意方向说明"（每个决策对应到哪条签或种子里的哪条线索，标题字体和正文字体都要写明），连同种子和抽签结果一起写进 `.design/direction.md`，再用自己的判断力把它做好看。
+- 写完对照 `references/ai-tells.md` 的第二、三层看一眼方向说明：如果配色、字体、版式加起来恰好是某个组合套路，说明推导被默认值拉回去了，回到抽签结果重新推。这一步检查的是方向，不是给实现加禁令。
 - **种子字符串绝不出现在设计里**，它只用于启发。
 - 需要多个备选方向时用 `-n`，每个方向各用一个新种子。
 
@@ -113,23 +124,16 @@ python scripts/seed_axes.py          # 一个方向；-n 3 给三个备选（mac
 1. **快照**：把当前源码复制到 `.design/snapshots/roundN/`，以便回滚。
 2. **截图**：
    ```bash
-   python scripts/shoot.py index.html --round N          # 默认输出到 .design/shots；有首屏动效加 --frames 4
+   python "<skill 目录>/scripts/shoot.py" index.html --round N    # 输出到 .design/shots；有首屏动效加 --frames 4
    ```
    脚本截桌面 + 移动端的首屏和分段长图，并先逐屏滚到底，让滚动触发的入场动画和懒加载图片都出现。直接 `full_page=True` 截一张的话，这些区块会是空白，评审会据此误判；超长的单张图也会被看图工具压缩到看不清细节。没有 Playwright 时用会话里的浏览器截图工具，但同样要先滚一遍再截。
-3. **在全新上下文中调用评审**，用能用到的最强模型（实现可以用更便宜的模型）。只给它截图（以及可选的参考图），**不给**代码、实现细节、之前的迭代或之前的评审意见。
-   - Claude Code：Agent 工具开子代理，prompt 里列出截图的绝对路径。
-   - Codex：开一个不继承父会话历史的子代理，把截图作为附件或路径交给它。没有这样的子代理时，新开一个独立的 `codex exec` 进程：
-     ```bash
-     codex exec -s read-only --skip-git-repo-check --image .design/shots/roundN_desktop_fold.png --image .design/shots/roundN_mobile_fold.png "<评审 prompt>"
-     ```
-     分段长图较多时，挑首屏加最能代表各区块的 3–4 张，每轮挑法保持一致。
-   - 两个宿主都做不到全新上下文时，**不要**自己给自己打分冒充评审：在 `review_log.md` 写"跳过：原因"，改为请用户看截图，或交付时说明未经独立评审。
-4. **每轮使用完全相同的评审 prompt**：从 `references/critic-prompt.md` 原样复制，只替换截图路径。
+3. **在全新上下文中调用评审**，用能用到的最强模型（实现可以用更便宜的模型）。只给它截图（以及可选的参考图），**不给**代码、实现细节、方向说明、之前的迭代或之前的评审意见。两个宿主的具体调用方式见 `references/critic-prompt.md`。
+4. **每轮使用完全相同的评审 prompt**：第一轮从 `references/critic-prompt.md` 填好存为 `.design/critic_prompt.md`，之后每轮只换截图路径。
 5. 在 `.design/review_log.md` 记下分数、评审前三条、本轮实际改了什么。根据评审意见修改，回到第 1 步。
 
 **设置要点：**
 - **完成标准是评审独立给出 ≥ 9/10（排名式则是排进前二），但这个阈值绝不写进评审 prompt**，保持评分客观。
-- 评审标准越客观越好。最好的形式是排名："这里有 5 张设计：4 张专业作品和 1 张我们的产品截图，按精致度和品味排名。"有合适参考图时优先用这种形式（可以是可比的优秀网站截图、用户喜欢的设计，甚至用 Codex 生成的概念图）。
+- 评审标准越客观越好。最好的形式是排名："这里有 5 张设计：4 张专业作品和 1 张我们的产品截图，按精致度和品味排名。"有合适参考图时优先用这种形式（可以是可比的优秀网站截图、用户喜欢的设计，甚至生成的概念图）。
 - **防止无限循环**：先跑 1–2 轮看是否在收敛；最多 5 轮；连续 2 轮分数不涨就停下，向用户说明现状和卡点。
 - **分数下降就回滚**到上一轮快照，换一条评审意见来改，不要在变差的版本上继续叠。
 - 修改时保留原有的高层美学方向，不要被评审带回模板化布局。评审意见与创意方向说明冲突时，以方向说明为准，并记进 `review_log.md`。
@@ -138,69 +142,15 @@ python scripts/seed_axes.py          # 一个方向；-n 3 给三个备选（mac
 
 编码代理爱用代码能做出的东西——渐变、几何形状、基础图案——这些恰恰是 AI 设计的典型破绽。真实的图像能迅速增加个性，体现超越表面的投入。代理即使有图像工具也很少主动用，**所以要主动用**：hero 主视觉、产品场景图、材质纹理、插画、图标组、概念图/情绪板（也可作为技巧 3 的评审参考图）。
 
-#### 首选：Codex 内置图像生成（走 ChatGPT 订阅，不需要 API key）
-
-Codex 自带 `$imagegen` skill 和内置 `image_gen` 工具，用用户的 ChatGPT 登录（Plus / Pro / Business / Edu / Enterprise），额度计入 ChatGPT 套餐，不产生 API 费用。
-
-**宿主是 Codex**：直接调用内置图像生成，跳过下面的预检和命令行调用；下面关于画面描述、文字、透明背景、亲自查看的要求照样适用。生成的图保存到项目的 `assets/` 里。
-
-**宿主是 Claude Code**：通过命令行调用 Codex。
-
-**预检**
-```bash
-codex --version || npm i -g @openai/codex   # 未安装则安装（安装前告知用户）
-codex login status                          # 应显示以 ChatGPT 登录
-```
-- 装了 Codex 桌面版不等于命令行里有 `codex`，以 `codex --version` 的结果为准。
-- 未登录：请用户运行 `codex login`；无浏览器的环境用 `codex login --device-auth`，把设备码交给用户在浏览器里完成授权。
-- **确保走订阅而不是 API key**：登录方式必须是 ChatGPT；调用时清掉 `OPENAI_API_KEY` 环境变量（见下方）。
-
-**调用**
-```bash
-mkdir -p assets
-env -u OPENAI_API_KEY codex exec -s workspace-write --skip-git-repo-check -C "$PWD" \
-  '$imagegen 生成一张图：{主体}，{构图与视角}，{光线}，{材质/质感}，配色 {色值，来自创意方向说明}，风格 {…}，宽高比 16:9，画面中不要任何文字。完成后保存为 ./assets/hero.png'
-```
-PowerShell 里没有 `env -u`，改为先执行 `Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue`，再调用 `codex exec`；`$imagegen` 要放在单引号里，否则会被当成变量展开。
-
-- prompt 里**不要**写"用 OpenAI API / curl / python 脚本生成"——那会让 Codex 绕开内置工具改走 API 计费。直接用 `$imagegen` + 画面描述即可。
-- 画面描述从"创意方向说明"（种子 / brief）推导，保证图与整体设计语言一致；同一页面的多张图在一次 exec 里批量生成，并写明统一的风格约束。
-- 画面里要出现文字（招牌、包装）时，生成"无文字"版本，文字用真实 HTML 叠上去。生成图里的中文字形几乎总是错的。
-- 默认输出目录是 `~/.codex/generated_images/`（Windows 为 `%USERPROFILE%\.codex\generated_images\`）；如果 Codex 没按要求存到项目里，就从那里取最新文件复制过来。
-- 以参考图为基础生成或编辑：`codex exec --image ref.png '$imagegen 基于这张图……'`。
-- 需要透明背景：先在纯色背景上生成，再抠图（如 `pip install rembg`）；只有用户同意时才改用需要 API key 的方式。
-- 每张图生成后都亲自打开查看（Claude Code 用 Read，Codex 用图片查看工具）；不满意就改 prompt 重生成，不要将就。
-- 结合着色器（WebGL/GLSL）、3D、视差、遮罩使用这些图像，做出更有意思的视觉；完成后逐帧在浏览器里核对效果。
-
-**运行位置**：当前环境装不上 Codex 或连不上 OpenAI（云端容器的网络可能有白名单限制）时，如果会话已关联用户的电脑且那里装了 Codex，就在用户电脑上运行，再把生成的图片传回工作区；否则如实告诉用户，并走下面的备选方案。
-
-#### 备选
-- 当前代理本身有其他内置图像生成（如在 Antigravity、Grok Build 里运行）→ 直接用，并明确指示它去用。
-- 用户提供 OpenAI / Gemini API key → 只在本地开发时使用，**绝不写进代码、产品或提交的文件**。建议用户为代理单独创建一个限额很低、可随时吊销的 key；经常需要时存进被 gitignore 的 `.env.agents`，并在 CLAUDE.md/AGENTS.md 里注明"仅供开发期使用，不得随产品发布"。
-- 都不可用 → 精心手绘的 SVG 插画、由种子驱动的 canvas/着色器生成艺术、真实感纹理（噪点、纸张、颗粒）；但不要退回到偷懒的渐变光斑。
+- 首选 Codex 的内置图像生成（走 ChatGPT 订阅，不需要 API key）：宿主是 Codex 就直接调用；宿主是 Claude Code 就通过命令行调用 `codex exec`。预检、命令、Windows 写法和备选方案都在 `references/media-generation.md`。
+- 画面描述从 `.design/direction.md` 推导；同一页面的图一次批量生成，写明统一的风格约束。
+- 画面里要有文字时，生成"无文字"版本，文字用真实 HTML 叠上去。生成图里的中文字形几乎总是错的。
+- 每张图都亲自打开看；不满意就改 prompt 重生成，不要将就。
+- 都不可用时，用手绘 SVG、种子驱动的 canvas/着色器生成艺术、真实感纹理，但不要退回到偷懒的渐变光斑。
 
 ### 技巧 5：用视频生成做高级动效
 
-用一个聚合平台（如 fal.ai）的 key，让代理自己挑选当前最合适的视频/抠像模型。key 的处理规则同技巧 4 的备选。起始帧和各状态的关键帧用技巧 4 的 Codex 图像生成来做。
-
-**A. 可叠加的动画图形**
-- 生成纯色背景（绿幕）上的循环片段，再用色键去背；复杂情况（玻璃、烟雾、毛发）用视频抠像（matting）模型。
-- 玻璃/折射类效果：先把物体渲染在**页面的真实背景色**上（把折射烘焙进去），再抠掉背景。
-- 色键示例：
-  ```bash
-  ffmpeg -i in.mp4 -vf "chromakey=0x00FF00:0.12:0.06" -c:v libvpx-vp9 -pix_fmt yuva420p -auto-alt-ref 0 out.webm
-  ```
-- Safari 对 VP9 透明 WebM 的支持不可靠，要给 Safari 准备退路：带 alpha 的 HEVC 版本、canvas 图像序列，或一张静态图。在 Safari（或 WebKit）里实际看一遍。
-
-**B. 状态之间的流畅过渡**
-- 很多视频模型支持在两张关键帧之间插值：用 Codex 生成各个状态的静帧，再生成从一帧到下一帧的过渡片段；用上一段的最后一帧作为下一段的起始帧，保证无缝衔接。
-- 用户操作时播放，或随滚动/手势逐帧拖动（scrub）。逐帧拖动要流畅，可导出为图像序列画到 canvas 上，或用全关键帧编码（`-g 1`）。
-- 选物理效果和一致性强的模型。
-
-**C. 嵌入**
-- 自动播放的视频必须 `muted playsinline`，否则移动端不会播。
-- 设 `poster` 首帧，视频加载前不留空洞。
-- `prefers-reduced-motion: reduce` 时停在 poster 或改为静态图。
+可叠加的循环动画（绿幕生成后去背）和状态之间的流畅过渡（关键帧插值），能让动效远超 CSS 能做到的程度。只在动效是设计核心时才用；做法、Safari 兼容和嵌入要求见 `references/media-generation.md` 的"视频"一节。
 
 ---
 
@@ -223,41 +173,9 @@ AI 爱加东西，很少减。克制本身就显得高级。这一阶段的大�
 
 ### 技巧 7：去掉 AI 痕迹
 
-**不要在开工时就把这些列为禁令**——这会让模型过度思考，冒出更奇怪的模式。而是在打磨阶段拿这份清单逐项检查，对命中的项尝试替代方案，比较哪个更好。不是每个渐变或卡片都是坏的，关键是**有意为之**。
+**不要在开工时就把这些列为禁令**——这会让模型过度思考，冒出更奇怪的模式。而是在打磨阶段拿 `references/ai-tells.md` 对照截图检查。不是每个渐变或卡片都是坏的，关键是**有意为之**。
 
-**第一层：老套路**
-
-| 常见 AI 痕迹 | 可尝试的替代 |
-|---|---|
-| 紫/蓝/粉渐变背景、渐变文字 | 有出处的配色（来自种子或灵感源），纯色 + 质感，单一强调色 |
-| 左文右图的 hero + 两个 CTA 按钮 | 全幅图像、文字压在图像上、非对称或编辑式排版、交互本身当 hero |
-| 标题上方的小药丸徽章（"✨ 全新发布"） | 删掉，或改成有信息量的真实细节 |
-| 三列/四列等宽功能卡片，各配一个图标 | 交错/不等宽版式、真实产品截图、一个功能讲深讲透 |
-| 所有东西都装进圆角卡片 + 柔和阴影 | 用留白、对齐和字体层级分组，而非容器 |
-| 玻璃拟态、模糊光斑、发光边框 | 真实图像、材质纹理、或干脆什么都不加 |
-| emoji 或通用线性图标充当插图 | 定制插画、Codex 生成的图像、或不用图标 |
-| 千篇一律的 Inter/系统无衬线 + 超大粗标题 | 有性格的字体搭配（衬线、等宽、展示字体），认真调字距和行高 |
-| "10x 更快 / 99.9% / 10k+ 用户"统计数字条 | 真实数据或删除 |
-| 虚构的推荐语和头像墙、"Trusted by"灰色 logo 墙 | 真实评价和真实客户，或删除 |
-| 每个元素都在淡入上移的滚动动画 | 少而有意义的动效，服务于叙事 |
-| 千篇一律的页脚四栏链接 | 只保留真正需要的链接 |
-| 每段文字都配小标题 + 说明 + 图标 | 合并、精简、让图像承担说明 |
-| 末尾的 FAQ 手风琴 + 再来一遍 CTA | 只在真有高频问题时保留，问答写具体 |
-
-**第二层："为了显得独特"的新套路**
-
-模型被要求"别像 AI"时会滑向第二个平均值。下面这些单独用都没错，堆在一起就是新的模板：
-
-| 新套路 | 检查方式 |
-|---|---|
-| 米白 / 奶油底 + 衬线标题 + 赤陶橙或墨绿强调色 | 配色是否真的来自种子或灵感物件，还是"高级感"的默认值 |
-| 标题里一个词换成衬线斜体（"Build *beautiful* things"） | 删掉斜体，标题是否依然成立 |
-| 小号全大写、加宽字距的眉标（eyebrow）、`[ 01 ]` 式等宽编号 | 编号是否表达了真实的顺序 |
-| Bento 网格（大小不一的圆角格子拼满一屏） | 格子大小是否对应内容的重要性 |
-| 全屏颗粒 / 噪点叠加 | 质感是否服务于灵感来源，还是为了"不那么数字" |
-| 深色底 + 霓虹描边 / 发光光标 | 同第一层的发光效果 |
-| 超大居中标题 + 一行灰色副标题 + 一个按钮，此外空无一物 | 空是因为克制，还是因为没东西可放 |
-| 水墨、祥云、毛笔字、红金配色（"中国风"） | 见 `references/cjk-typography.md` 末节 |
+判据是**数命中**，不是逐条删：一个套路是选择，五个就是默认。命中 0–2 条，逐条确认有出处；命中 3 条及以上，或命中任何一个组合套路（例如"奶油底 + 衬线标题 + 赤陶 / 墨绿 + 全宽风景照"），说明这一版是默认值，回到 `.design/direction.md` 找出被拉回平均值的那一步，从那里重新推。
 
 有中文时，再按 `references/cjk-typography.md` 过一遍字体、行高、字距、标点、中西文混排和强调方式。
 
@@ -268,7 +186,7 @@ AI 爱加东西，很少减。克制本身就显得高级。这一阶段的大�
 - 用户提供了文案就用用户的。
 - 否则逐行重写：更短、更简单、更具体，全篇保持一致的语气。
 - 删掉这些 AI 腔："解锁你的潜能""无缝""赋能""提升""不只是 X，更是 Y"、三连排比、空洞的形容词堆砌、破折号滥用、对每个功能的过度解释。中文 AI 腔的完整清单见 `references/cjk-typography.md` 末节。
-- 按钮文字写动作和结果（"下载 PDF""预约 3 月 12 日"），不写"了解更多""立即体验"。
+- 按钮文字写动作和结果（"下载 PDF""预约 3 月 12 日"），不写"了解更多""立即体验""随心出发"。
 - 交付时明确提醒用户：**所有文案都应由真人通读一遍**，按品牌语气润色。
 
 ---
@@ -278,13 +196,13 @@ AI 爱加东西，很少减。克制本身就显得高级。这一阶段的大�
 1. 亲自看最终截图（桌面 + 移动端；动效逐帧看）。
 2. 响应式：常见断点下不溢出、不重叠、可点击区域足够大。
 3. 可读性与可访问性：文字对比度、字号、焦点状态、`prefers-reduced-motion` 降级。
-4. 浏览器控制台无报错，资源都能加载；生成的图片已压缩到合理体积（如 WebP/AVIF）。
+4. 浏览器控制台无报错，资源都能加载；方向说明里写的字体确实渲染出来了，没有悄悄落到回退字体；生成的图片已压缩到合理体积（如 WebP/AVIF）。
 5. 字体：中文字体已子集化或走切片服务，首屏不会因为字体卡住；没有伪斜体、伪粗体。
 6. 种子字符串没有出现在设计中；任何 API key 都没有出现在代码或文件里。
-7. 再过一遍技巧 6 和 7 的清单（两层都过）。
+7. 再按技巧 6 和 `references/ai-tells.md` 过一遍，记下命中数。
 8. `.design/` 里的产出物齐全；跳过的步骤都写了原因。
 
-交付时简要说明：选了什么创意方向（及来源：种子与抽签 / brief，指向 `.design/direction.md`）、评审最终分数和轮数（指向 `.design/review_log.md`）、哪些步骤被跳过及原因、用了哪些生成资源（Codex 图像 / 视频）、哪些文案需要用户亲自过目。
+交付时简要说明：选了什么创意方向（及来源：种子与抽签 / brief，指向 `.design/direction.md`）、评审最终分数和轮数（指向 `.design/review_log.md`）、AI 痕迹命中数、哪些步骤被跳过及原因、用了哪些生成资源（图像 / 视频）、哪些文案需要用户亲自过目。
 
 ---
 
@@ -294,5 +212,6 @@ AI 爱加东西，很少减。克制本身就显得高级。这一阶段的大�
 - 随机性来自外部，品味来自人，判断来自独立的评审。
 - 加法交给生成，减法交给自己。
 - 灵感落在具体物件上，不落在风格词上。
+- 一个套路是选择，五个就是默认。
 - 把失败的大胆 prompt 存下来，新模型发布时再试一次。
 - 最终目的不是"看起来不像 AI 做的"，而是唤起一种感觉。用户觉得好用、愉悦，就不会在乎是谁设计的。

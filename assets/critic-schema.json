@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "aesthetic": {
+      "type": "string",
+      "description": "评审判断出的这个设计想要达成的美学方向"
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 6,
+      "description": "与顶级工作室水准之间最大的差距，按影响排序",
+      "items": {
+        "type": "object",
+        "properties": {
+          "element": { "type": "string", "description": "具体是哪个元素" },
+          "problem": { "type": "string", "description": "问题是什么" },
+          "fix": { "type": "string", "description": "改成什么" }
+        },
+        "required": ["element", "problem", "fix"],
+        "additionalProperties": false
+      }
+    },
+    "ai_tells": {
+      "type": "array",
+      "description": "看起来用烂了、过度堆砌或一眼是 AI 生成的模式",
+      "items": { "type": "string" }
+    },
+    "score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "离那个工作室水准有多近"
+    }
+  },
+  "required": ["aesthetic", "gaps", "ai_tells", "score"],
+  "additionalProperties": false
+}

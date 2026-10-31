@@ -33,6 +33,31 @@
 
 ---
 
+## 如何调用评审
+
+先把填好的 prompt 存成 `.design/critic_prompt.md`，每轮只改其中的截图路径，方便确认每轮 prompt 一致。
+
+**Claude Code**：Agent 工具开一个子代理，prompt 就是上面填好的全文，截图写绝对路径。
+
+**Codex，首选 `design_critic` 子代理**：本 skill 的 `codex/design_critic.toml` 装进 `~/.codex/agents/` 后，Codex 里会多出一个只看截图、不读其他文件、不改文件的评审子代理。明确要求"spawn 一个 design_critic 子代理"，把填好的 prompt 交给它，等它返回。这个文件只是一层约束外壳，评审内容全部来自父代理交给它的 prompt，所以 skill 更新时一般不需要重新安装它。
+
+**Codex，备选：独立的 `codex exec` 进程**（没装 `design_critic`、或子代理不可用时）：
+
+```bash
+codex exec --ephemeral -s read-only --skip-git-repo-check \
+  -i .design/shots/roundN_desktop_fold.png,.design/shots/roundN_mobile_fold.png \
+  --output-schema <skill 目录>/assets/critic-schema.json \
+  -o .design/critic_roundN.json - < .design/critic_prompt.md
+```
+
+- `--ephemeral` 不留会话记录，`-o` 把最终回复写进文件，`--output-schema` 强制输出 `{aesthetic, gaps[], ai_tells[], score}`，分数直接从 JSON 读，不用再从正文里找 `SCORE:` 那一行。用 schema 时，prompt 第 7 条的"最后一行格式"可以忽略。
+- 排名式不用 schema，直接读回复里的 `RANK:` 行。
+- 分段长图较多时，挑首屏加最能代表各区块的 3–4 张，每轮挑法保持一致。
+
+两个宿主都开不出全新上下文的评审时，**不要**自己给自己打分冒充评审：在 `review_log.md` 写"跳过：原因"，改为请用户看截图，或交付时说明未经独立评审。
+
+---
+
 ## 评审记录
 
 每轮在项目里追加 `.design/review_log.md`：
