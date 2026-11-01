@@ -90,12 +90,15 @@ def main() -> None:
             height = scroll_through(page, vp["height"])
             tiles = min(MAX_TILES, -(-height // vp["height"]))
             for i in range(tiles):
-                top = i * vp["height"]
-                clip = {"x": 0, "y": top, "width": vp["width"],
-                        "height": min(vp["height"], height - top)}
+                # 滚到这一屏再按视口截，不用 full_page：整页截图会把视口拉高到整页，
+                # 用 100vh 排版的首屏会重新排版，截到的不是用户看到的样子
+                top = min(i * vp["height"], max(0, height - vp["height"]))
+                page.evaluate(f"window.scrollTo(0, {top})")
+                page.wait_for_timeout(350)
                 path = f"{prefix}_fold.png" if i == 0 else f"{prefix}_part{i + 1}.png"
-                page.screenshot(path=path, full_page=True, clip=clip)
+                page.screenshot(path=path)
                 written.append(path)
+            page.evaluate("window.scrollTo(0, 0)")
             if -(-height // vp["height"]) > MAX_TILES:
                 print(f"注意：{name} 页面超过 {MAX_TILES} 屏，后半部分未截，必要时手动补截。")
             page.close()

@@ -77,9 +77,11 @@ def main():
         flagged = 0
         screens = -(-height // args.height)
         for i in range(screens):
-            top = i * args.height
-            clip = {"x": 0, "y": top, "width": args.width, "height": min(args.height, height - top)}
-            share = empty_share(page.screenshot(full_page=True, clip=clip))
+            # 滚动后按视口截，避免整页截图把视口拉高、让 100vh 布局重排
+            top = min(i * args.height, max(0, height - args.height))
+            page.evaluate(f"window.scrollTo(0, {top})")
+            page.wait_for_timeout(300)
+            share = empty_share(page.screenshot())
             mark = "  ← 几乎只有背景" if share >= EMPTY_SHARE else ""
             flagged += bool(mark)
             print(f"- 第 {i + 1} 屏（y={top}）：{share:.0%}{mark}")
