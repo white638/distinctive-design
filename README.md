@@ -16,6 +16,7 @@
 | `SKILL.md` | 主流程 |
 | `scripts/seed_axes.py` | 生成种子并在八条设计轴上抽签 |
 | `scripts/shoot.py` | 给评审截图：先滚动触发懒加载与入场动画，再截首屏与分段长图（桌面 + 移动） |
+| `scripts/layout_check.py` | 查留白与字号：逐屏报出几乎只有背景的屏，统计实际渲染的字号种类和小字，列出小字清单 |
 | `scripts/palette_check.py` | 查截图配色：单一色相、平涂背景、与主视觉的色彩关系、没融入环境的外来色块（依赖 Pillow） |
 | `references/critic-prompt.md` | 评审 prompt 原文（打分式 / 排名式）、两个宿主的调用方式、评审记录格式 |
 | `references/ai-tells.md` | 三层 AI 痕迹清单（老套路 / 新套路 / 组合套路）与计数规则，注明日期 |

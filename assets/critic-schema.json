@@ -75,6 +75,23 @@
       "type": "string",
       "description": "第四步：判断出的美学方向"
     },
+    "core_concept": {
+      "type": "object",
+      "description": "第四步：核心概念（主视觉构思、整体风格组合）本身是否常见，只看概念不看执行",
+      "properties": {
+        "familiar": {
+          "type": "boolean"
+        },
+        "why": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "familiar",
+        "why"
+      ],
+      "additionalProperties": false
+    },
     "gaps": {
       "type": "array",
       "maxItems": 6,
@@ -123,6 +140,7 @@
     "interpretation",
     "unclear_elements",
     "aesthetic",
+    "core_concept",
     "gaps",
     "ai_tells",
     "score"
